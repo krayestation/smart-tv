@@ -23,6 +23,9 @@ jobs:
         with:
           gradle-version: '8.7'
 
+      - name: Bundle fonts into the app
+        run: python3 scripts/fetch_fonts.py app/src/main/assets/fonts || echo "Font download failed - the app will use fallback fonts"
+
       - name: Build
         run: gradle assembleRelease -Pvc=${{ github.run_number }} --no-daemon --stacktrace
 
