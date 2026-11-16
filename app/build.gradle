@@ -1,0 +1,48 @@
+plugins {
+    id 'com.android.application'
+}
+
+def buildNumber = (project.findProperty('vc') ?: '1').toString().toInteger()
+
+android {
+    namespace 'com.krayestation.smarttv'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.krayestation.smarttv'
+        minSdk 22
+        targetSdk 30
+        versionCode buildNumber
+        versionName "1.0.${buildNumber}"
+    }
+
+    // One fixed key so each new build installs over the last one.
+    signingConfigs {
+        shared {
+            storeFile file('smarttv.keystore')
+            storePassword 'smarttv'
+            keyAlias 'smarttv'
+            keyPassword 'smarttv'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.shared
+        }
+        debug {
+            signingConfig signingConfigs.shared
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    lint {
+        abortOnError false
+        checkReleaseBuilds false
+    }
+}

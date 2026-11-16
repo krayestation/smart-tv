@@ -1,0 +1,866 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Smart TV Home</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..800;1,9..144,300..800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ease: cubic-bezier(.2,.8,.2,1);
+    --serif: "Fraunces", "Iowan Old Style", "Palatino Linotype", Georgia, "Noto Serif", serif;
+    --sans: "Inter", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; color: #fff; cursor: none;
+    font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+  #stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; transform-origin: 0 0;
+    background: radial-gradient(70% 80% at 75% 20%, #2c4a3a 0%, rgba(44,74,58,0) 70%), radial-gradient(60% 70% at 10% 90%, #4a2c3c 0%, rgba(74,44,60,0) 70%), #0d0f14;
+    --accent: hsl(0,80%,55%); --accent2: hsl(30,80%,45%); --glass: rgba(18,18,26,.42); }
+
+  /* ---------- artwork background ---------- */
+  .bg { position: absolute; left: -3%; top: -3%; width: 106%; height: 106%; background-size: cover; background-position: center;
+    opacity: 0; transition: opacity 1400ms var(--ease); will-change: opacity, transform; }
+  .bg.on { opacity: 1; animation: drift 70s ease-in-out infinite alternate; }
+  @keyframes drift { 0% { transform: scale(1) translate3d(0,0,0); } 100% { transform: scale(1.06) translate3d(-1.2%,-.8%,0); } }
+  .scrim { position: absolute; left: 0; top: 0; right: 0; bottom: 0; pointer-events: none; transition: opacity 800ms var(--ease);
+    background:
+      linear-gradient(180deg, rgba(0,0,0,.5) 0%, rgba(0,0,0,.12) 24%, rgba(0,0,0,0) 40%, rgba(0,0,0,.5) 66%, rgba(0,0,0,.85) 100%),
+      linear-gradient(90deg, rgba(0,0,0,.45) 0%, rgba(0,0,0,0) 55%); }
+
+  /* ---------- greeting ---------- */
+  .hello { position: absolute; left: 96px; top: 60px; transition: opacity 600ms var(--ease); text-shadow: 0 2px 20px rgba(0,0,0,.35); }
+  .hello .hi { font-family: var(--serif); font-size: 58px; font-weight: 500; letter-spacing: -.01em; font-variation-settings: "opsz" 144, "SOFT" 50; }
+  .hello .hi i { font-style: italic; font-weight: 400; }
+  .hello .date { font-size: 22px; font-weight: 500; opacity: .82; margin-top: 6px; }
+
+  /* ---------- clock + chips ---------- */
+  .corner { position: absolute; right: 96px; top: 52px; text-align: right; transition: opacity 600ms var(--ease); }
+  .clock { font-family: var(--serif); font-size: 72px; font-weight: 500; letter-spacing: -.02em; line-height: 1; text-shadow: 0 2px 24px rgba(0,0,0,.35);
+    font-variant-numeric: lining-nums tabular-nums; font-variation-settings: "opsz" 144; }
+  .chips { margin-top: 18px; white-space: nowrap; }
+  .chip { display: inline-block; vertical-align: middle; height: 50px; line-height: 50px; padding: 0 22px 0 14px; margin-left: 12px; border-radius: 25px;
+    font-size: 21px; font-weight: 600; background: var(--glass); -webkit-backdrop-filter: blur(26px) saturate(1.5); backdrop-filter: blur(26px) saturate(1.5);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.16); text-align: left; }
+  .chip svg { width: 30px; height: 30px; vertical-align: -9px; margin-right: 8px; }
+  .chip .muted { opacity: .75; font-weight: 500; }
+  .chip .crest { display: inline-block; width: 30px; height: 30px; line-height: 30px; border-radius: 15px; background: #034694;
+    box-shadow: 0 0 0 2px #dba111; font-size: 10px; font-weight: 800; text-align: center; vertical-align: 1px; margin-right: 10px; }
+  .chip .live { color: #ff453a; font-weight: 800; margin-right: 6px; }
+  .chip.hide { display: none; }
+
+  /* music pill */
+  .chip.music { height: 80px; line-height: normal; border-radius: 40px; padding: 0 10px 0 10px; white-space: nowrap; }
+  .music > * { display: inline-block; vertical-align: middle; }
+  .ring { width: 64px; height: 64px; border-radius: 50%; padding: 3px; box-sizing: border-box; margin-top: 8px;
+    background: conic-gradient(#1ed760 var(--p, 0%), rgba(255,255,255,.2) 0); }
+  .disc { position: relative; width: 58px; height: 58px; border-radius: 50%; background-size: cover; background-position: center;
+    background-color: #1db954; animation: spin 9s linear infinite; box-shadow: inset 0 0 0 1px rgba(0,0,0,.4); }
+  .disc:before { content: ""; position: absolute; left: 0; top: 0; right: 0; bottom: 0; border-radius: 50%;
+    background: repeating-radial-gradient(circle, rgba(0,0,0,0) 0 3px, rgba(0,0,0,.08) 3px 4px), linear-gradient(135deg, rgba(255,255,255,.25), rgba(255,255,255,0) 45%); }
+  .disc:after { content: ""; position: absolute; left: 50%; top: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%;
+    background: #111; box-shadow: 0 0 0 3px rgba(255,255,255,.75); }
+  .music.paused .disc { animation-play-state: paused; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .mt { width: 300px; margin: 0 14px 0 14px; text-align: left; }
+  .mt b { display: block; font-family: var(--serif); font-size: 23px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mt span { display: block; font-size: 16px; font-weight: 500; opacity: .85; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mt span em { font-style: normal; color: #3ee07f; font-weight: 700; }
+  .mctl { white-space: nowrap; }
+  .mbtn { display: inline-block; width: 50px; height: 50px; border-radius: 25px; text-align: center; margin-left: 2px; vertical-align: middle;
+    transition: transform 200ms var(--ease), background 200ms var(--ease), box-shadow 200ms var(--ease), color 200ms var(--ease); }
+  .mbtn svg { width: 22px; height: 22px; margin: 14px 0 0 0; vertical-align: top; }
+  .mbtn.big svg { width: 26px; height: 26px; margin-top: 12px; }
+  .mbtn.focus { background: #1ed760; color: #04170b; transform: scale(1.15); box-shadow: 0 0 0 3px #fff, 0 0 34px #1ed760; }
+
+  /* ---------- info ---------- */
+  .info { position: absolute; left: 96px; bottom: 436px; max-width: 1200px; transition: opacity 350ms var(--ease), transform 350ms var(--ease);
+    text-shadow: 0 2px 24px rgba(0,0,0,.4); }
+  .info.swap { opacity: 0; transform: translate3d(0,10px,0); }
+  .eyebrow { font-size: 21px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); filter: brightness(1.6) saturate(1.2);
+    margin-bottom: 10px; min-height: 25px; }
+  .title { font-family: var(--serif); font-size: 108px; font-weight: 600; letter-spacing: -.025em; line-height: 1; font-variation-settings: "opsz" 144, "SOFT" 30; }
+  .line { font-size: 29px; font-weight: 400; opacity: .92; margin-top: 18px; line-height: 1.3; }
+  .keys { margin-top: 20px; font-size: 21px; font-weight: 600; white-space: nowrap; }
+  .k { display: inline-block; min-width: 34px; height: 34px; line-height: 34px; padding: 0 9px; margin-right: 10px; border-radius: 9px; text-align: center;
+    font-size: 17px; font-weight: 800; background: rgba(255,255,255,.22); box-shadow: inset 0 0 0 1px rgba(255,255,255,.28); vertical-align: 1px; text-shadow: none; }
+  .keys .sep { display: inline-block; width: 30px; }
+
+  /* ---------- tiles ---------- */
+  .tiles { position: absolute; left: 96px; bottom: 236px; height: 156px; white-space: nowrap; transition: transform 400ms var(--ease), opacity 400ms var(--ease); }
+  .tile { position: relative; display: inline-block; vertical-align: top; width: 260px; height: 156px; margin-right: 32px; border-radius: 20px;
+    transition: transform 300ms var(--ease), box-shadow 300ms var(--ease), opacity 300ms var(--ease); box-shadow: 0 14px 30px rgba(0,0,0,.45); }
+  .inner { position: absolute; left: 0; top: 0; width: 100%; height: 100%; border-radius: 20px; overflow: hidden; transform: translateZ(0); }
+  .art { position: absolute; left: -3%; top: -3%; width: 106%; height: 106%; background-size: cover; background-position: center; transition: transform 300ms var(--ease); }
+  .word { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); text-align: center; font-family: var(--serif);
+    font-size: 34px; font-weight: 600; letter-spacing: -.01em; padding: 0 14px; white-space: normal; line-height: 1.05; }
+  .icon { position: absolute; left: 50%; top: 50%; width: 96px; height: 96px; margin: -48px 0 0 -48px; background-size: contain; background-repeat: no-repeat; background-position: center; }
+  .gloss { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; background: linear-gradient(180deg, rgba(255,255,255,.18) 0%, rgba(255,255,255,0) 45%); }
+  .shine { position: absolute; top: -40%; left: -70%; width: 50%; height: 180%; opacity: 0; pointer-events: none;
+    background: linear-gradient(100deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.34) 50%, rgba(255,255,255,0) 100%); }
+  .get { position: absolute; right: 12px; top: 12px; font-size: 15px; font-weight: 800; letter-spacing: .06em; padding: 4px 10px; border-radius: 10px; background: rgba(0,0,0,.5); display: none; }
+  .tile.missing .art, .tile.missing .word, .tile.missing .icon { opacity: .4; }
+  .tile.missing .get { display: block; }
+  .tile.focus { transform: translate3d(0,-8px,0) scale(1.16); z-index: 2; box-shadow: 0 0 0 4px rgba(255,255,255,.95), 0 30px 70px rgba(0,0,0,.55), 0 0 80px var(--accent); }
+  .tile.focus .inner { animation: tilt 7s ease-in-out infinite; }
+  .tile.focus .art { transform: translate3d(-4px,-2px,0) scale(1.02); }
+  .tile.focus .shine { animation: shine 1100ms var(--ease) 1; }
+  .tile.press { transform: translate3d(0,-2px,0) scale(1.08); transition-duration: 120ms; }
+  @keyframes shine { 0% { opacity: 1; transform: translate3d(0,0,0); } 100% { opacity: 0; transform: translate3d(560%,0,0); } }
+  @keyframes tilt { 0%,100% { transform: perspective(900px) rotateY(-2deg) rotateX(1deg); } 50% { transform: perspective(900px) rotateY(2deg) rotateX(-1deg); } }
+  .lower .tile, .upper .tile { opacity: .72; }
+
+  /* ---------- pills ---------- */
+  .pills { position: absolute; left: 96px; bottom: 100px; white-space: nowrap; transition: opacity 400ms var(--ease); }
+  .pill { display: inline-block; height: 60px; line-height: 60px; padding: 0 30px 0 24px; margin-right: 16px; border-radius: 30px; font-size: 23px; font-weight: 600;
+    background: var(--glass); -webkit-backdrop-filter: blur(26px) saturate(1.5); backdrop-filter: blur(26px) saturate(1.5); box-shadow: inset 0 0 0 1px rgba(255,255,255,.16);
+    transition: transform 240ms var(--ease), background 400ms var(--ease), box-shadow 240ms var(--ease); }
+  .pill svg { width: 26px; height: 26px; vertical-align: -6px; margin-right: 12px; }
+  .pill.focus { background: linear-gradient(135deg, var(--accent), var(--accent2)); transform: scale(1.1);
+    box-shadow: 0 0 0 3px rgba(255,255,255,.95), 0 16px 34px rgba(0,0,0,.4), 0 0 50px var(--accent); }
+
+  /* ---------- artwork caption ---------- */
+  .caption { position: absolute; right: 96px; bottom: 112px; text-align: right; font-size: 19px; opacity: .88; text-shadow: 0 2px 14px rgba(0,0,0,.6);
+    transition: opacity 600ms var(--ease), transform 600ms var(--ease), bottom 600ms var(--ease); max-width: 640px; }
+  .caption b { font-family: var(--serif); font-style: italic; font-weight: 500; font-size: 24px; }
+
+  /* ---------- library ---------- */
+  .lib { position: absolute; left: 0; top: 0; right: 0; bottom: 0; display: none; background: rgba(0,0,0,.5); }
+  .lib.on { display: block; }
+  .lib h1 { position: absolute; left: 96px; top: 70px; margin: 0; font-family: var(--serif); font-weight: 600; font-size: 76px; letter-spacing: -.02em; font-variation-settings: "opsz" 144; }
+  .lib .sub { position: absolute; left: 100px; top: 168px; font-size: 22px; opacity: .8; }
+  .lib .viewport { position: absolute; left: 0; right: 0; top: 230px; bottom: 0; overflow: hidden; }
+  .lib .grid { position: absolute; left: 96px; top: 30px; width: 1760px; transition: transform 380ms var(--ease); }
+  .lapp { position: relative; float: left; width: 312px; height: 176px; margin: 0 40px 84px 0; border-radius: 20px;
+    transition: transform 260ms var(--ease), box-shadow 260ms var(--ease); box-shadow: 0 12px 28px rgba(0,0,0,.45); }
+  .lapp:nth-child(5n) { margin-right: 0; }
+  .lapp .name { position: absolute; left: 4px; right: 4px; top: 190px; font-size: 22px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: .85; }
+  .lapp .pin { position: absolute; right: 10px; top: 10px; width: 30px; height: 30px; border-radius: 15px; background: rgba(255,255,255,.92); color: #111; display: none; text-align: center; }
+  .lapp .pin svg { width: 18px; height: 18px; margin-top: 6px; }
+  .lapp.pinned .pin { display: block; }
+  .lapp.focus { transform: scale(1.12); z-index: 2; box-shadow: 0 0 0 4px #fff, 0 26px 60px rgba(0,0,0,.5), 0 0 70px var(--accent); }
+  .lapp.focus .name { opacity: 1; }
+  .lib .libkeys { position: absolute; right: 96px; top: 96px; font-size: 21px; font-weight: 600; }
+  .lib .libkeys .k { margin: 0 10px 0 26px; }
+
+  /* ---------- sheet ---------- */
+  .sheet { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: rgba(0,0,0,.45); display: none; }
+  .sheet.on { display: block; }
+  .card { position: absolute; left: 50%; top: 50%; width: 820px; margin-left: -410px; transform: translateY(-50%); padding: 46px 54px 40px; border-radius: 34px;
+    background: rgba(24,24,30,.78); -webkit-backdrop-filter: blur(40px) saturate(1.4); backdrop-filter: blur(40px) saturate(1.4);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.12), 0 40px 100px rgba(0,0,0,.6); }
+  .card h2 { margin: 0 0 8px; font-family: var(--serif); font-size: 46px; font-weight: 600; letter-spacing: -.01em; }
+  .card .meta { font-size: 22px; opacity: .75; margin-bottom: 18px; }
+  .card p { margin: 0 0 22px; font-size: 24px; opacity: .88; line-height: 1.42; }
+  .card ol { margin: 0 0 22px; padding-left: 30px; font-size: 22px; line-height: 1.45; opacity: .9; }
+  .card ol li { margin-bottom: 8px; }
+  .opt { height: 68px; line-height: 68px; padding: 0 28px; border-radius: 18px; font-size: 25px; font-weight: 600; margin-top: 10px; background: rgba(255,255,255,.08);
+    transition: transform 200ms var(--ease), background 200ms var(--ease); }
+  .opt.focus { background: linear-gradient(135deg, var(--accent), var(--accent2)); transform: scale(1.03); box-shadow: 0 0 0 3px #fff; }
+
+  .toast { position: absolute; left: 50%; top: 70px; transform: translate(-50%, -20px); padding: 16px 30px; border-radius: 22px; font-size: 24px; font-weight: 600;
+    background: rgba(24,24,30,.85); -webkit-backdrop-filter: blur(30px); backdrop-filter: blur(30px); opacity: 0; white-space: nowrap;
+    transition: opacity 300ms var(--ease), transform 300ms var(--ease); }
+  .toast.on { opacity: 1; transform: translate(-50%, 0); }
+
+  /* ---------- idle: just the painting ---------- */
+  .ambient .info, .ambient .tiles, .ambient .pills, .ambient .hello { opacity: 0; }
+  .ambient .scrim { opacity: .45; }
+  .ambient .caption { bottom: 64px; opacity: 1; }
+  .libopen .info, .libopen .tiles, .libopen .pills, .libopen .hello, .libopen .corner, .libopen .caption { opacity: 0; }
+
+  .hint { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); font-size: 17px; opacity: .55; display: none; white-space: nowrap; }
+  .preview .hint { display: block; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="bg" id="bgA"></div>
+  <div class="bg" id="bgB"></div>
+  <div class="scrim"></div>
+
+  <div class="hello"><div class="hi" id="hi"></div><div class="date" id="date"></div></div>
+
+  <div class="corner">
+    <div class="clock" id="time">--:--</div>
+    <div class="chips">
+      <span class="chip music hide" id="music">
+        <span class="ring" id="ring"><span class="disc" id="disc"></span></span><span class="mt"><b id="mSong"></b><span id="mSub"></span></span><span class="mctl" id="mCtl"></span>
+      </span><span class="chip hide" id="match"></span><span class="chip hide" id="weather"></span>
+    </div>
+  </div>
+
+  <div class="info" id="info">
+    <div class="eyebrow" id="eyebrow"></div>
+    <div class="title" id="title"></div>
+    <div class="line" id="line"></div>
+    <div class="keys" id="keys"></div>
+  </div>
+
+  <div class="tiles" id="tiles"></div>
+  <div class="pills" id="pills"></div>
+  <div class="caption" id="caption"></div>
+
+  <div class="lib" id="lib">
+    <h1>All apps</h1>
+    <div class="sub" id="libSub"></div>
+    <div class="libkeys"><span class="k">OK</span>Open<span class="k">&#9776;</span>Add / remove from top row<span class="k">&#8617;</span>Back</div>
+    <div class="viewport"><div class="grid" id="grid"></div></div>
+  </div>
+
+  <div class="sheet" id="sheet"><div class="card" id="card"></div></div>
+  <div class="toast" id="toast"></div>
+  <div class="hint">Preview &middot; arrows to move (&uarr; from the apps reaches the music) &middot; Enter = OK &middot; M = &#9776; &middot; Esc = back</div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ==================================================================
+  // CONFIG
+  // ==================================================================
+  var CONFIG = {
+    name: 'Krish',
+    weather: { city: 'London', lat: 51.5072, lon: -0.1276, unit: 'celsius' },
+    team: { espnId: 363, name: 'Chelsea', short: 'CFC',
+            leagues: { 'eng.1': 'Premier League', 'uefa.champions': 'Champions League', 'uefa.europa': 'Europa League',
+                       'uefa.europa.conf': 'Conference League', 'eng.fa': 'FA Cup', 'eng.league_cup': 'Carabao Cup' } },
+    spotifyClientId: '148382e52c454a98a97ecbd6c4baa3de'   // from developer.spotify.com (see README)
+  };
+
+  var BUILTIN = {
+    netflix: { name: 'Netflix',     color: '#e50914', line: 'Series, films and whatever everyone’s talking about.', action: 'Open Netflix' },
+    prime:   { name: 'Prime Video', color: '#1a98ff', line: 'Prime films, Amazon Originals and live sport.',          action: 'Open Prime Video' },
+    stremio: { name: 'Stremio',     color: '#7b5bf5', line: 'Your streaming library and add-ons.',                    action: 'Open Stremio' },
+    youtube: { name: 'YouTube',     color: '#ff2d2d', line: 'YouTube with no ads, through SmartTube.',               action: 'Open SmartTube' },
+    hbomax:  { name: 'HBO Max',     color: '#4b3cff', line: 'HBO originals, blockbusters and prestige TV.',           action: 'Open HBO Max' },
+    spotify: { name: 'Spotify',     color: '#1ed760', line: 'Music and podcasts on the big screen.',                  action: 'Open Spotify' }
+  };
+  var DEFAULT_PINS = ['netflix', 'prime', 'stremio', 'youtube', 'hbomax', 'spotify'];
+
+  // ==================================================================
+  // Artwork of the day (public-domain paintings, images from Wikimedia Commons)
+  // ==================================================================
+  var ART = [
+    { id: 'dream', title: 'The Dream', artist: 'Henri Rousseau', year: '1910', place: 'Museum of Modern Art, New York', q: 'Henri Rousseau The Dream 1910 painting',
+      about: 'Rousseau’s last great painting: a woman on a velvet sofa dreams herself into a moonlit jungle of lotus flowers, lions and a snake charmer. He never left France — his jungles came from sketching in the Paris botanical gardens.' },
+    { id: 'starry', title: 'The Starry Night', artist: 'Vincent van Gogh', year: '1889', place: 'Museum of Modern Art, New York', q: 'Van Gogh Starry Night Google Art Project',
+      about: 'Painted at the asylum in Saint-Rémy from the view outside his window, with a village he added from imagination beneath a sky that seems to boil.' },
+    { id: 'wave', title: 'The Great Wave off Kanagawa', artist: 'Katsushika Hokusai', year: 'c. 1831', place: 'Woodblock print, many museums', q: 'Great Wave off Kanagawa Hokusai print',
+      about: 'From the series Thirty-Six Views of Mount Fuji. Look past the claw-like wave to the tiny snow-capped mountain — Fuji is the real subject.' },
+    { id: 'sunrise', title: 'Impression, Sunrise', artist: 'Claude Monet', year: '1872', place: 'Musée Marmottan Monet, Paris', q: 'Claude Monet Impression soleil levant',
+      about: 'The port of Le Havre through morning haze. A critic used its title to mock the painters who showed with Monet, and the name Impressionism stuck.' },
+    { id: 'jatte', title: 'A Sunday on La Grande Jatte', artist: 'Georges Seurat', year: '1884–86', place: 'Art Institute of Chicago', q: 'Georges Seurat Sunday Afternoon Island of La Grande Jatte',
+      about: 'Parisians relaxing on an island in the Seine, built from countless small dots of pure colour that blend in your eye — the technique later called pointillism.' },
+    { id: 'temeraire', title: 'The Fighting Temeraire', artist: 'J. M. W. Turner', year: '1839', place: 'National Gallery, London', q: 'Turner The Fighting Temeraire tugged to her last berth',
+      about: 'A warship that fought at Trafalgar is towed upriver to be broken up, led by a small steam tug into a blazing sunset. Turner called it his “darling”.' },
+    { id: 'cypresses', title: 'Wheat Field with Cypresses', artist: 'Vincent van Gogh', year: '1889', place: 'National Gallery, London', q: 'Van Gogh A Wheatfield with Cypresses National Gallery',
+      about: 'A summer field near Saint-Rémy under rolling clouds. Van Gogh wrote that cypresses were as beautiful as an Egyptian obelisk.' },
+    { id: 'tiger', title: 'Surprised!', artist: 'Henri Rousseau', year: '1891', place: 'National Gallery, London', q: 'Henri Rousseau Surprised Tiger in a Tropical Storm',
+      about: 'Rousseau’s first jungle painting: a tiger crouches in lashing wind and rain. Critics laughed at it at first; it is now one of his best-loved works.' },
+    { id: 'sierra', title: 'Among the Sierra Nevada, California', artist: 'Albert Bierstadt', year: '1868', place: 'Smithsonian American Art Museum', q: 'Albert Bierstadt Among the Sierra Nevada California',
+      about: 'A glowing, partly imagined mountain valley, painted in Rome and toured around Europe as a picture of the American West.' },
+    { id: 'oxbow', title: 'The Oxbow', artist: 'Thomas Cole', year: '1836', place: 'The Metropolitan Museum of Art, New York', q: 'Thomas Cole View from Mount Holyoke Oxbow',
+      about: 'A storm clears over the Connecticut River: wild forest on the left, farmland on the right. Cole painted himself in, tiny, at his easel.' },
+    { id: 'rainsteam', title: 'Rain, Steam and Speed', artist: 'J. M. W. Turner', year: '1844', place: 'National Gallery, London', q: 'Turner Rain Steam and Speed Great Western Railway',
+      about: 'A train charges across the Maidenhead bridge through rain and mist. Look closely and there’s a hare racing ahead of it.' },
+    { id: 'delft', title: 'View of Delft', artist: 'Johannes Vermeer', year: 'c. 1660–61', place: 'Mauritshuis, The Hague', q: 'Vermeer View of Delft Mauritshuis',
+      about: 'Vermeer’s hometown under passing clouds, with sunlight catching the rooftops beyond. Marcel Proust called it the most beautiful painting in the world.' },
+    { id: 'twilight', title: 'Twilight in the Wilderness', artist: 'Frederic Edwin Church', year: '1860', place: 'Cleveland Museum of Art', q: 'Frederic Edwin Church Twilight in the Wilderness',
+      about: 'A blazing sunset over untouched wilderness, painted on the eve of the American Civil War.' },
+    { id: 'kandinsky', title: 'Composition VII', artist: 'Wassily Kandinsky', year: '1913', place: 'Tretyakov Gallery, Moscow', q: 'Kandinsky Composition VII 1913',
+      about: 'An explosion of colour and line that Kandinsky prepared with more than thirty studies, then painted in just a few days.' },
+    { id: 'kiss', title: 'The Kiss', artist: 'Gustav Klimt', year: '1907–08', place: 'Belvedere, Vienna', q: 'Gustav Klimt The Kiss Google Art Project',
+      about: 'The high point of Klimt’s “golden period”, made with real gold leaf. The lovers kneel at the edge of a flowering meadow.' },
+    { id: 'rhone', title: 'Starry Night Over the Rhône', artist: 'Vincent van Gogh', year: '1888', place: 'Musée d’Orsay, Paris', q: 'Van Gogh Starry Night Over the Rhone',
+      about: 'Painted on the riverbank in Arles at night, with the gas lamps doubled in the water and the Plough shining above.' },
+    { id: 'lilies', title: 'The Water-Lily Pond', artist: 'Claude Monet', year: '1899', place: 'National Gallery, London', q: 'Claude Monet The Water-Lily Pond 1899 National Gallery',
+      about: 'The Japanese footbridge in Monet’s garden at Giverny — a pond he would go on to paint for the rest of his life.' },
+    { id: 'haywain', title: 'The Hay Wain', artist: 'John Constable', year: '1821', place: 'National Gallery, London', q: 'John Constable The Hay Wain',
+      about: 'A farm cart crosses the River Stour in Suffolk beside Willy Lott’s cottage, a few steps from Flatford Mill.' },
+    { id: 'gauguin', title: 'Where Do We Come From? What Are We? Where Are We Going?', artist: 'Paul Gauguin', year: '1897–98', place: 'Museum of Fine Arts, Boston', q: 'Gauguin Where Do We Come From What Are We Where Are We Going',
+      about: 'Gauguin’s largest painting, made in Tahiti, reads from right to left: from a sleeping baby to an old woman at the end of life.' },
+    { id: 'boating', title: 'Luncheon of the Boating Party', artist: 'Pierre-Auguste Renoir', year: '1880–81', place: 'The Phillips Collection, Washington', q: 'Renoir Luncheon of the Boating Party',
+      about: 'Renoir’s friends linger over lunch on a restaurant balcony by the Seine. The woman playing with the little dog is Aline Charigot, who later married him.' },
+    { id: 'rainyday', title: 'Paris Street; Rainy Day', artist: 'Gustave Caillebotte', year: '1877', place: 'Art Institute of Chicago', q: 'Gustave Caillebotte Paris Street Rainy Day',
+      about: 'A newly built Paris crossroads on a wet afternoon, painted with almost photographic sharpness and umbrellas everywhere.' }
+  ];
+
+  var SVG = {
+    grid:  '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></svg>',
+    cast:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6"/><path d="M3 12a8 8 0 0 1 8 8"/><path d="M3 16a4 4 0 0 1 4 4"/><circle cx="3.5" cy="19.5" r=".8" fill="currentColor"/></svg>',
+    frame: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m3 16 5-5 4 4 3-3 6 6"/><circle cx="15.5" cy="8.5" r="1.5"/></svg>',
+    gear:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
+    home:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg>',
+    prev:  '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h2v14H6zM20 5v14L9.5 12z"/></svg>',
+    next:  '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 5h2v14h-2zM4 5v14l10.5-7z"/></svg>',
+    play:  '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg>',
+    pause: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4.5" width="4" height="15" rx="1"/><rect x="14" y="4.5" width="4" height="15" rx="1"/></svg>',
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'
+  };
+
+  var PILLS = [
+    { id: 'library',    name: 'All apps',     icon: 'grid',  line: 'Every app on your Fire TV, in one place.', action: 'Browse all apps' },
+    { id: 'cast',       name: 'Cast',         icon: 'cast',  line: 'Mirror your MacBook (AirPlay) or Pixel (Google Cast) to this TV.', action: 'Open the cast receiver', menu: 'How to cast' },
+    { id: 'background', name: 'Background',   icon: 'frame', line: '', action: 'About this artwork' },
+    { id: 'settings',   name: 'Settings',     icon: 'gear',  line: 'Fire TV system settings.', action: 'Open Settings', menu: 'Home button setup' },
+    { id: 'firehome',   name: 'Fire TV Home', icon: 'home',  line: 'Amazon’s original home screen.', action: 'Go to Fire TV Home' }
+  ];
+
+  var TV = window.TV || null;
+  var IDLE_MS = 3 * 60 * 1000;
+  var $ = function (id) { return document.getElementById(id); };
+  var stage = $('stage');
+
+  // ==================================================================
+  // State
+  // ==================================================================
+  var pins = loadPins();
+  var info = {};
+  var row = 0, col = { '-1': 1, '0': 0, '1': 0 }, lastTile = 0;
+  var sheet = null, lib = null, ambient = false, idleTimer = null;
+  var sp = { linked: false, item: null, at: 0 };
+
+  function loadPins() {
+    try { var p = JSON.parse(localStorage.getItem('pins')); if (p && p.length) return p; } catch (e) {}
+    return DEFAULT_PINS.slice();
+  }
+  function savePins() { try { localStorage.setItem('pins', JSON.stringify(pins)); } catch (e) {} }
+
+  function fit() {
+    var s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+    stage.style.transform = 'translate(' + (window.innerWidth - 1920 * s) / 2 + 'px,' + (window.innerHeight - 1080 * s) / 2 + 'px) scale(' + s + ')';
+  }
+  window.addEventListener('resize', fit); fit();
+
+  // ==================================================================
+  // Accent colours (from each app's icon on the TV)
+  // ==================================================================
+  function hexToHsl(hex) { var n = parseInt(hex.slice(1), 16); return rgbToHsl((n >> 16) & 255, (n >> 8) & 255, n & 255); }
+  function rgbToHsl(r, g, b) {
+    r /= 255; g /= 255; b /= 255;
+    var max = Math.max(r, g, b), min = Math.min(r, g, b), h = 0, s = 0, l = (max + min) / 2;
+    if (max !== min) {
+      var d = max - min;
+      s = l > .5 ? d / (2 - max - min) : d / (max + min);
+      if (max === r) h = (g - b) / d + (g < b ? 6 : 0); else if (max === g) h = (b - r) / d + 2; else h = (r - g) / d + 4;
+      h *= 60;
+    }
+    return { h: h, s: s, l: l };
+  }
+  function hsl(h, s, l, a) { h = ((h % 360) + 360) % 360; return 'hsla(' + Math.round(h) + ',' + Math.round(s * 100) + '%,' + Math.round(l * 100) + '%,' + (a == null ? 1 : a) + ')'; }
+  function nameHue(name) { var h = 0; for (var i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % 360; return h; }
+
+  function vibrant(src, cb) {
+    var img = new Image();
+    img.onload = function () {
+      try {
+        var c = document.createElement('canvas'); c.width = 40; c.height = 24;
+        var x = c.getContext('2d'); x.drawImage(img, 0, 0, 40, 24);
+        var d = x.getImageData(0, 0, 40, 24).data, bins = [], best = null, i;
+        for (i = 0; i < d.length; i += 4) {
+          if (d[i + 3] < 128) continue;
+          var p = rgbToHsl(d[i], d[i + 1], d[i + 2]);
+          if (p.s < .3 || p.l < .14 || p.l > .9) continue;
+          var b = Math.round(p.h / 30) % 12, center = b * 30, w = p.s * (1 - Math.abs(p.l - .5) * 1.4);
+          var bin = bins[b] || (bins[b] = { w: 0, dh: 0, s: 0, l: 0 });
+          bin.w += w; bin.dh += ((((p.h - center) % 360) + 540) % 360 - 180) * w; bin.s += p.s * w; bin.l += p.l * w;
+        }
+        for (i = 0; i < 12; i++) if (bins[i] && (!best || bins[i].w > best.w)) { best = bins[i]; best.c = i * 30; }
+        if (!best || best.w < 3) return cb(null);
+        cb({ h: best.c + best.dh / best.w, s: best.s / best.w, l: best.l / best.w });
+      } catch (e) { cb(null); }
+    };
+    img.onerror = function () { cb(null); };
+    img.src = src;
+  }
+  function themeFor(id) {
+    var i = info[id];
+    if (i && i.theme) return i.theme;
+    if (BUILTIN[id]) return hexToHsl(BUILTIN[id].color);
+    if (id === 'music') return hexToHsl('#1ed760');
+    return { h: nameHue(labelOf(id)), s: .7, l: .5 };
+  }
+  var accentKey = '';
+  function setAccent(t) {
+    var s = Math.max(.6, Math.min(.95, t.s)), h = t.h, key = Math.round(h) + '|' + Math.round(s * 100);
+    if (key === accentKey) return;
+    accentKey = key;
+    stage.style.setProperty('--accent', hsl(h, s, .52));
+    stage.style.setProperty('--accent2', hsl(h + 35, s, .42));
+    stage.style.setProperty('--glass', hsl(h, s * .45, .14, .46));
+  }
+
+  // ==================================================================
+  // Artwork background
+  // ==================================================================
+  var artOffset = 0, artNow = null, bgFront = $('bgA'), bgBack = $('bgB');
+  function todaysIndex() {
+    var start = new Date(2026, 10, 16), t = new Date(); t.setHours(0, 0, 0, 0);
+    var n = Math.round((t - start) / 86400000);
+    return ((n % ART.length) + ART.length) % ART.length;
+  }
+  function currentArt() { return ART[(todaysIndex() + artOffset) % ART.length]; }
+  function cacheGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function cacheSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+  function resolveArt(a, cb) {
+    var cached = cacheGet('art:' + a.id);
+    if (cached) return cb(cached);
+    var url = 'https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrnamespace=6&gsrlimit=8' +
+      '&gsrsearch=' + encodeURIComponent(a.q + ' filetype:bitmap') + '&prop=imageinfo&iiprop=url|size|mime&iiurlwidth=1920';
+    get(url, function (err, body) {
+      try {
+        if (err) throw err;
+        var pages = JSON.parse(body).query.pages, list = [], k;
+        for (k in pages) list.push(pages[k]);
+        list.sort(function (x, y) { return (x.index || 0) - (y.index || 0); });
+        for (var i = 0; i < list.length; i++) {
+          var ii = list[i].imageinfo && list[i].imageinfo[0];
+          if (!ii || !/jpeg|png/.test(ii.mime) || ii.width < 1400) continue;
+          var src = ii.thumburl || ii.url;
+          cacheSet('art:' + a.id, src);
+          return cb(src);
+        }
+      } catch (e) {}
+      cb(null);
+    });
+  }
+  function showArt() {
+    var a = currentArt();
+    artNow = a;
+    $('caption').innerHTML = '<b>' + a.title + '</b> &nbsp;·&nbsp; ' + a.artist + ', ' + a.year;
+    resolveArt(a, function (src) {
+      if (!src || artNow !== a) return;
+      var img = new Image();
+      img.onload = function () {
+        if (artNow !== a) return;
+        bgBack.style.backgroundImage = 'url("' + src + '")';
+        bgBack.classList.add('on'); bgFront.classList.remove('on');
+        var t = bgFront; bgFront = bgBack; bgBack = t;
+      };
+      img.src = src;
+    });
+    if (row === 1 && PILLS[col['1']].id === 'background') { infoKey = ''; render(); }
+  }
+  function artSheet() {
+    var a = currentArt(), opts = [{ label: 'Show another painting', fn: function () { artOffset++; showArt(); artSheet(); } }];
+    if (artOffset) opts.push({ label: 'Back to today’s painting', fn: function () { artOffset = 0; showArt(); } });
+    openSheet(a.title, '<div class="meta">' + a.artist + ' &middot; ' + a.year + ' &middot; ' + a.place + '</div><p>' + a.about + '</p>', opts, 'Close');
+  }
+
+  // ==================================================================
+  // Clock + greeting
+  // ==================================================================
+  var lastDay = new Date().getDate();
+  function tick() {
+    var d = new Date();
+    $('time').textContent = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    $('date').textContent = d.toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long' });
+    if (d.getDate() !== lastDay) { lastDay = d.getDate(); artOffset = 0; showArt(); }   // new painting at midnight
+  }
+  $('hi').innerHTML = 'Hey <i>' + CONFIG.name + '</i>';
+  tick(); setInterval(tick, 10000);
+
+  // ==================================================================
+  // Network helper
+  // ==================================================================
+  var fetchCbs = {}, fetchSeq = 0;
+  function get(url, cb) {
+    if (TV && TV.fetch) { var id = 'f' + (++fetchSeq); fetchCbs[id] = cb; TV.fetch(url, id); return; }
+    if (!window.fetch) return cb(new Error('no fetch'));
+    window.fetch(url).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+      .then(function (t) { cb(null, t); }, function (e) { cb(e); });
+  }
+  window.onFetch = function (id, code, body) {
+    var cb = fetchCbs[id]; delete fetchCbs[id];
+    if (cb) cb(code >= 200 && code < 300 ? null : new Error('HTTP ' + code), body);
+  };
+
+  // ==================================================================
+  // Weather
+  // ==================================================================
+  var WX = {
+    sun:   '<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="6.5" fill="#ffd60a"/><g stroke="#ffd60a" stroke-width="2.4" stroke-linecap="round"><path d="M16 3v3.5M16 25.5V29M3 16h3.5M25.5 16H29M6.8 6.8l2.5 2.5M22.7 22.7l2.5 2.5M6.8 25.2l2.5-2.5M22.7 9.3l2.5-2.5"/></g></svg>',
+    moon:  '<svg viewBox="0 0 32 32"><path d="M21 4.5A11.5 11.5 0 1 0 27.5 21 9 9 0 0 1 21 4.5z" fill="#ffe58a"/></svg>',
+    part:  '<svg viewBox="0 0 32 32"><circle cx="12" cy="12" r="5.5" fill="#ffd60a"/><g stroke="#ffd60a" stroke-width="2.2" stroke-linecap="round"><path d="M12 2.5v2.5M2.5 12H5M5.3 5.3l1.8 1.8M18.7 5.3l-1.8 1.8"/></g><path d="M11 27h13.5a5.5 5.5 0 0 0 .4-11A7 7 0 0 0 11.6 18 4.5 4.5 0 0 0 11 27z" fill="#fff"/></svg>',
+    cloud: '<svg viewBox="0 0 32 32"><path d="M8.5 25h15a6 6 0 0 0 .5-12A8 8 0 0 0 8.8 15 5 5 0 0 0 8.5 25z" fill="#e8edf5"/></svg>',
+    rain:  '<svg viewBox="0 0 32 32"><path d="M8.5 20h15a6 6 0 0 0 .5-12A8 8 0 0 0 8.8 10 5 5 0 0 0 8.5 20z" fill="#e8edf5"/><g stroke="#64d2ff" stroke-width="2.4" stroke-linecap="round"><path d="M11 23.5l-1.5 4M17 23.5l-1.5 4M23 23.5l-1.5 4"/></g></svg>',
+    snow:  '<svg viewBox="0 0 32 32"><path d="M8.5 20h15a6 6 0 0 0 .5-12A8 8 0 0 0 8.8 10 5 5 0 0 0 8.5 20z" fill="#e8edf5"/><g fill="#bfe6ff"><circle cx="11" cy="25" r="1.8"/><circle cx="17" cy="27" r="1.8"/><circle cx="23" cy="25" r="1.8"/></g></svg>',
+    storm: '<svg viewBox="0 0 32 32"><path d="M8.5 19h15a6 6 0 0 0 .5-12A8 8 0 0 0 8.8 9 5 5 0 0 0 8.5 19z" fill="#d2d8e3"/><path d="M17 18l-5 7h4l-2 5.5 6.5-8h-4l2.5-4.5z" fill="#ffd60a"/></svg>',
+    fog:   '<svg viewBox="0 0 32 32"><g stroke="#e8edf5" stroke-width="2.6" stroke-linecap="round"><path d="M5 11h22M8 16h19M5 21h18M9 26h14"/></g></svg>'
+  };
+  function wxIcon(code, day) {
+    if (code === 0) return day ? WX.sun : WX.moon;
+    if (code <= 2) return day ? WX.part : WX.cloud;
+    if (code === 3) return WX.cloud;
+    if (code === 45 || code === 48) return WX.fog;
+    if ((code >= 71 && code <= 77) || code === 85 || code === 86) return WX.snow;
+    if (code >= 95) return WX.storm;
+    return WX.rain;
+  }
+  function showWeather(temp, code, day) {
+    var el = $('weather');
+    el.innerHTML = wxIcon(code, day) + Math.round(temp) + '° <span class="muted">' + CONFIG.weather.city + '</span>';
+    el.classList.remove('hide');
+  }
+  function loadWeather() {
+    var w = CONFIG.weather;
+    get('https://api.open-meteo.com/v1/forecast?latitude=' + w.lat + '&longitude=' + w.lon +
+        '&current=temperature_2m,weather_code,is_day&temperature_unit=' + w.unit, function (err, body) {
+      try { if (err) throw err; var c = JSON.parse(body).current; showWeather(c.temperature_2m, c.weather_code, c.is_day === 1); }
+      catch (e) { if (!TV) showWeather(11, 2, true); }
+    });
+  }
+
+  // ==================================================================
+  // Next match
+  // ==================================================================
+  function showMatch(m) {
+    var el = $('match');
+    if (!m) { el.classList.add('hide'); return; }
+    var d = new Date(m.date), now = new Date(), time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    var days = Math.round((new Date(d.toDateString()) - new Date(now.toDateString())) / 86400000);
+    var when = days === 0 ? 'Today ' + time : days === 1 ? 'Tomorrow ' + time :
+               days < 7 ? d.toLocaleDateString([], { weekday: 'short' }) + ' ' + time :
+               d.toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' }) + ', ' + time;
+    el.innerHTML = '<span class="crest">' + CONFIG.team.short + '</span>' + (m.live ? '<span class="live">LIVE</span>' : '') +
+      (m.home ? 'vs ' : 'at ') + m.opp + ' <span class="muted">· ' + (m.live ? m.comp : when) + '</span>';
+    el.classList.remove('hide');
+  }
+  function loadMatch() {
+    var keys = Object.keys(CONFIG.team.leagues), left = keys.length, best = null, now = Date.now();
+    keys.forEach(function (lg) {
+      get('https://site.api.espn.com/apis/site/v2/sports/soccer/' + lg + '/teams/' + CONFIG.team.espnId + '/schedule?fixture=true', function (err, body) {
+        try {
+          if (!err) {
+            (JSON.parse(body).events || []).forEach(function (ev) {
+              var t = Date.parse(ev.date), comp = ev.competitions && ev.competitions[0];
+              var state = comp && comp.status && comp.status.type ? comp.status.type.state : 'pre';
+              if (state === 'post' || t < now - 3 * 3600000) return;
+              if (best && t >= best.t) return;
+              var parts = String(ev.name || '').split(' at ');
+              if (parts.length !== 2) return;
+              var home = parts[1].indexOf(CONFIG.team.name) === 0;
+              best = { t: t, date: ev.date, home: home, opp: home ? parts[0] : parts[1], live: state === 'in', comp: CONFIG.team.leagues[lg] };
+            });
+          }
+        } catch (e) {}
+        if (--left === 0) {
+          if (!best && !TV) best = { date: '2026-11-21T15:00Z', home: true, opp: 'Leeds United', live: false };
+          showMatch(best);
+        }
+      });
+    });
+  }
+
+  // ==================================================================
+  // Spotify music pill
+  // ==================================================================
+  var CTL = ['prev', 'play', 'next'];
+  function npVisible() { return !!(sp.linked && sp.item); }
+  function renderMusic() {
+    var el = $('music');
+    if (!npVisible()) { el.classList.add('hide'); if (row === -1) { row = 0; } return; }
+    var it = sp.item;
+    el.classList.remove('hide');
+    el.classList.toggle('paused', !it.isPlaying);
+    $('disc').style.backgroundImage = it.art ? 'url(' + it.art + ')' : 'radial-gradient(circle at 35% 35%, #5ef59a, #1db954 45%, #0b5d2a)';
+    $('mSong').textContent = it.title;
+    $('mSub').innerHTML = esc(it.artist) + ' &middot; <em>' + esc(it.device || 'Spotify') + '</em>';
+    $('mCtl').innerHTML = '<span class="mbtn">' + SVG.prev + '</span><span class="mbtn big">' + (it.isPlaying ? SVG.pause : SVG.play) + '</span><span class="mbtn">' + SVG.next + '</span>';
+    paintMusicFocus(); tickMusic();
+  }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function paintMusicFocus() { var b = $('mCtl').children; for (var i = 0; i < b.length; i++) b[i].classList.toggle('focus', row === -1 && col['-1'] === i); }
+  function tickMusic() {
+    if (!npVisible()) return;
+    var it = sp.item, p = it.progress + (it.isPlaying ? Date.now() - sp.at : 0);
+    $('ring').style.setProperty('--p', Math.min(100, it.duration ? p / it.duration * 100 : 0).toFixed(1) + '%');
+  }
+  setInterval(tickMusic, 1000);
+  window.onSpotify = function (s) {
+    var d = JSON.parse(s);
+    sp = { linked: !!d.linked, item: d.item || null, at: Date.now() };
+    renderMusic(); infoKey = ''; render();
+  };
+  function spControl(a) {
+    if (!sp.item) return;
+    if (a === 'play') { sp.item.progress += sp.item.isPlaying ? Date.now() - sp.at : 0; sp.at = Date.now(); sp.item.isPlaying = !sp.item.isPlaying; renderMusic(); infoKey = ''; render(); }
+    if (TV) TV.spotifyControl(a === 'play' ? (sp.item.isPlaying ? 'play' : 'pause') : a);
+    else if (a !== 'play') toast(a === 'next' ? 'Skipping to the next track' : 'Back to the previous track');
+  }
+
+  // ==================================================================
+  // Tiles + pills
+  // ==================================================================
+  function labelOf(id) {
+    if (BUILTIN[id]) return BUILTIN[id].name;
+    var i = info[id]; if (i && i.label) return i.label;
+    return id.replace(/^pkg:/, '').split('.').pop();
+  }
+  function artHtml(id) {
+    var i = info[id] || {}, t = themeFor(id), bg = 'linear-gradient(135deg,' + hsl(t.h, Math.max(t.s, .6), .5) + ',' + hsl(t.h + 30, Math.max(t.s, .6), .28) + ')';
+    if (i.img && i.kind === 'banner') return '<div class="art" style="background-image:url(' + i.img + ')"></div>';
+    if (i.img) return '<div class="art" style="background-image:' + bg + '"></div><div class="icon" style="background-image:url(' + i.img + ')"></div>';
+    return '<div class="art" style="background-image:' + bg + '"></div><div class="word">' + esc(labelOf(id)) + '</div>';
+  }
+  function buildTiles() {
+    $('tiles').innerHTML = pins.map(function (id) {
+      var i = info[id], missing = TV && i && i.installed === false;
+      return '<div class="tile' + (missing ? ' missing' : '') + '"><div class="inner">' + artHtml(id) +
+        '<div class="gloss"></div><div class="shine"></div><div class="get">GET</div></div></div>';
+    }).join('');
+    if (col['0'] >= pins.length) col['0'] = pins.length - 1;
+  }
+  function buildPills() { $('pills').innerHTML = PILLS.map(function (p) { return '<div class="pill">' + SVG[p.icon] + p.name + '</div>'; }).join(''); }
+  function scrollTiles() { var fx = col['0'] * 292, x = fx > 1400 ? fx - 1400 : 0; $('tiles').style.transform = 'translate3d(' + (-x) + 'px,0,0)'; }
+
+  // ==================================================================
+  // Info panel + render
+  // ==================================================================
+  var infoKey = '';
+  function setInfo(eyebrow, title, line, keys) {
+    var key = [eyebrow, title, line, keys].join('|');
+    if (key === infoKey) return;
+    infoKey = key;
+    var el = $('info');
+    el.classList.add('swap');
+    setTimeout(function () {
+      $('eyebrow').textContent = eyebrow; $('title').textContent = title; $('line').textContent = line; $('keys').innerHTML = keys;
+      el.classList.remove('swap');
+    }, 150);
+  }
+  function keyHint(action, menu) {
+    return '<span class="k">OK</span>' + action + (menu ? '<span class="sep"></span><span class="k">&#9776;</span>' + menu : '');
+  }
+
+  function render() {
+    var tiles = $('tiles').children, pills = $('pills').children, i;
+    stage.classList.toggle('lower', row === 1);
+    stage.classList.toggle('upper', row === -1);
+    for (i = 0; i < tiles.length; i++) tiles[i].classList.toggle('focus', row === 0 && i === col['0']);
+    for (i = 0; i < pills.length; i++) pills[i].classList.toggle('focus', row === 1 && i === col['1']);
+    paintMusicFocus();
+    scrollTiles();
+
+    if (row === 0) {
+      var id = pins[col['0']], b = BUILTIN[id], inf = info[id] || {};
+      lastTile = col['0'];
+      setAccent(themeFor(id));
+      if (TV && inf.installed === false) {
+        setInfo('Not installed', labelOf(id),
+          id === 'youtube' ? 'Ad-free YouTube needs SmartTube, installed with Downloader.' : 'This app isn’t on your Fire TV yet.',
+          keyHint(id === 'youtube' ? 'How to install' : 'Get it from the Appstore', 'Move or remove'));
+      } else if (b) {
+        var line = b.line;
+        if (id === 'spotify' && CONFIG.spotifyClientId && !sp.linked) line += ' ☰ to show what’s playing here.';
+        setInfo('', b.name, line, keyHint(b.action, 'Move, remove' + (id === 'spotify' && CONFIG.spotifyClientId ? ', connect' : '')));
+      } else {
+        setInfo('', labelOf(id), 'Pinned from your apps.', keyHint('Open ' + labelOf(id), 'Move or remove'));
+      }
+    } else if (row === 1) {
+      var p = PILLS[col['1']], pl = p.line;
+      setAccent(themeFor(pins[lastTile]));
+      if (p.id === 'background') { var a = currentArt(); setInfo('Today’s painting', a.title, a.artist + ', ' + a.year + ' · ' + a.place, keyHint(p.action)); return; }
+      if (p.id === 'settings' && TV && TV.homeServiceOn && !TV.homeServiceOn()) pl += ' The Home button isn’t set up yet.';
+      if (p.id === 'cast' && TV && info.cast && info.cast.installed === false) pl = 'Needs the free AirScreen app — OK opens it in the Appstore.';
+      setInfo('', p.name, pl, keyHint(p.action, p.menu));
+    } else {
+      setAccent(themeFor('music'));
+      var c = CTL[col['-1']], it = sp.item;
+      setInfo('Now playing on ' + (it.device || 'Spotify'), it.title, it.artist,
+        keyHint(c === 'play' ? (it.isPlaying ? 'Pause' : 'Play') : c === 'next' ? 'Next track' : 'Previous track'));
+    }
+  }
+
+  // ==================================================================
+  // Actions
+  // ==================================================================
+  var toastTimer = null;
+  function toast(msg) { var t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.remove('on'); }, 2600); }
+
+  function castHelp() {
+    openSheet('How to cast', '<ol>' +
+      '<li><b>MacBook Pro:</b> open Control Centre → Screen Mirroring and pick <b>AirScreen</b>. Video apps with an AirPlay button work too.</li>' +
+      '<li><b>Pixel 10:</b> pull down Quick Settings → <b>Screen Cast</b> (or Google Home → Cast my screen) and pick <b>AirScreen</b>. In Chrome and many apps, the Cast button works too.</li>' +
+      '<li><b>YouTube, Netflix and Spotify</b> don’t need mirroring: tap the cast or devices button on your phone and pick this Fire TV.</li>' +
+      '</ol><p>AirScreen must be open on the TV to show up. If the Pixel doesn’t see it, turn on Cast in AirScreen’s settings.</p>',
+      [{ label: 'Open AirScreen now', fn: function () { launch('cast'); } }], 'Close');
+  }
+  function launch(id) {
+    if (id === 'library') { openLibrary(); return; }
+    if (id === 'background') { artSheet(); return; }
+    if (!TV) { toast('On the TV this opens ' + (BUILTIN[id] ? BUILTIN[id].name : id === 'cast' ? 'AirScreen' : labelOf(id))); return; }
+    var r = TV.launch(id);
+    if (r === 'store') toast('Opening the Appstore…');
+    else if (r === 'smarttube') openSheet('Ad-free YouTube', '<p>Install SmartTube: open Downloader, go to smarttubeapp.github.io, and install the stable build. Then press OK on YouTube again.</p>', [], 'OK');
+    else if (r === 'missing') toast(labelOf(id) + ' isn’t installed.');
+  }
+  function activate() {
+    if (row === 0) {
+      var el = $('tiles').children[col['0']];
+      el.classList.add('press'); setTimeout(function () { el.classList.remove('press'); }, 160);
+      launch(pins[col['0']]);
+    } else if (row === 1) launch(PILLS[col['1']].id);
+    else spControl(CTL[col['-1']]);
+  }
+  function menu() {
+    if (row === 0) {
+      var id = pins[col['0']], i = col['0'], opts = [];
+      if (i > 0) opts.push({ label: 'Move left', fn: function () { move(i, -1); } });
+      if (i < pins.length - 1) opts.push({ label: 'Move right', fn: function () { move(i, 1); } });
+      if (pins.length > 1) opts.push({ label: 'Remove from top row', fn: function () { unpin(id); } });
+      opts.push({ label: 'Add more apps…', fn: openLibrary });
+      if (id === 'spotify' && CONFIG.spotifyClientId) {
+        if (sp.linked) opts.push({ label: 'Disconnect Spotify player', fn: function () { if (TV) TV.spotifyLogout(); sp = { linked: false, item: null }; renderMusic(); render(); } });
+        else opts.push({ label: 'Connect Spotify (show what’s playing)', fn: function () { if (TV) TV.spotifyLogin(CONFIG.spotifyClientId); else toast('On the TV this opens the Spotify sign-in'); } });
+      }
+      openSheet(labelOf(id), '<p>Arrange your top row.</p>', opts);
+    } else if (row === 1) {
+      var pid = PILLS[col['1']].id;
+      if (pid === 'cast') castHelp();
+      else if (pid === 'settings') openSheet('Home button', '<p>Turn on “Smart TV Home button” in Accessibility so the remote’s Home button always comes back here.</p>', [
+        { label: 'Open Accessibility settings', fn: function () { if (TV) TV.openAccessibility(); else toast('On the TV this opens Accessibility settings'); } }]);
+      else if (pid === 'background') artSheet();
+    }
+  }
+  function move(i, d) { var t = pins[i]; pins[i] = pins[i + d]; pins[i + d] = t; col['0'] = i + d; savePins(); buildTiles(); infoKey = ''; render(); }
+  function unpin(id) {
+    var i = pins.indexOf(id); if (i < 0 || pins.length < 2) return;
+    pins.splice(i, 1); savePins(); buildTiles(); infoKey = ''; render(); toast(labelOf(id) + ' removed from the top row');
+  }
+  function pin(id) { if (pins.indexOf(id) >= 0) return; pins.push(id); savePins(); buildTiles(); toast(labelOf(id) + ' added to the top row'); }
+
+  // ==================================================================
+  // Sheet
+  // ==================================================================
+  function openSheet(title, html, opts, closeLabel) {
+    sheet = { opts: opts.concat([{ label: closeLabel || (opts.length ? 'Cancel' : 'OK'), fn: function () {} }]), i: 0 };
+    $('card').innerHTML = '<h2>' + title + '</h2>' + html + sheet.opts.map(function (o) { return '<div class="opt">' + o.label + '</div>'; }).join('');
+    $('sheet').classList.add('on');
+    renderSheet();
+  }
+  function renderSheet() { var o = $('card').querySelectorAll('.opt'); for (var i = 0; i < o.length; i++) o[i].classList.toggle('focus', i === sheet.i); }
+  function closeSheet() { sheet = null; $('sheet').classList.remove('on'); }
+  function sheetKey(k) {
+    if (k === 'up') sheet.i = Math.max(0, sheet.i - 1);
+    else if (k === 'down') sheet.i = Math.min(sheet.opts.length - 1, sheet.i + 1);
+    else if (k === 'back') { closeSheet(); return; }
+    else if (k === 'ok') { var fn = sheet.opts[sheet.i].fn; closeSheet(); fn(); return; }
+    renderSheet();
+  }
+
+  // ==================================================================
+  // App library
+  // ==================================================================
+  var SAMPLE_APPS = ['Netflix', 'Prime Video', 'Stremio', 'SmartTube', 'HBO Max', 'Spotify', 'Disney+', 'Apple TV', 'BBC iPlayer', 'ITVX',
+                     'Channel 4', 'Plex', 'VLC', 'Twitch', 'AirScreen', 'Downloader', 'DAZN', 'Sky Go', 'TNT Sports', 'Silk Browser'];
+  function libId(a) { for (var k in info) if (info[k] && info[k].pkg === a.pkg && BUILTIN[k]) return k; return 'pkg:' + a.pkg; }
+  function openLibrary() {
+    var apps;
+    if (TV) { try { apps = JSON.parse(TV.allApps()); } catch (e) { apps = []; } }
+    else apps = SAMPLE_APPS.map(function (n) { return { pkg: 'sample.' + n.toLowerCase().replace(/\W/g, ''), label: n }; });
+    apps.forEach(function (a) {
+      var id = libId(a);
+      if (!info[id]) info[id] = { installed: true, label: a.label, img: a.img, kind: a.kind, pkg: a.pkg };
+      a.id = id;
+    });
+    lib = { apps: apps, i: 0 };
+    $('libSub').textContent = apps.length + ' apps on this Fire TV';
+    $('grid').innerHTML = apps.map(function (a) {
+      return '<div class="lapp"><div class="inner">' + artHtml(a.id) + '<div class="gloss"></div></div><div class="pin">' + SVG.check + '</div><div class="name">' + esc(a.label) + '</div></div>';
+    }).join('');
+    stage.classList.add('libopen'); $('lib').classList.add('on');
+    renderLib();
+    apps.forEach(function (a) { extractTheme(a.id); });
+  }
+  function closeLibrary() { lib = null; $('lib').classList.remove('on'); stage.classList.remove('libopen'); infoKey = ''; render(); }
+  function renderLib() {
+    var el = $('grid').children;
+    for (var i = 0; i < el.length; i++) { el[i].classList.toggle('focus', i === lib.i); el[i].classList.toggle('pinned', pins.indexOf(lib.apps[i].id) >= 0); }
+    $('grid').style.transform = 'translate3d(0,' + (-Math.max(0, Math.floor(lib.i / 5) - 1) * 260) + 'px,0)';
+    if (lib.apps[lib.i]) setAccent(themeFor(lib.apps[lib.i].id));
+  }
+  function libKey(k) {
+    var n = lib.apps.length;
+    if (k === 'back') { closeLibrary(); return; }
+    if (!n) return;
+    if (k === 'left' && lib.i % 5 > 0) lib.i--;
+    else if (k === 'right' && lib.i % 5 < 4 && lib.i < n - 1) lib.i++;
+    else if (k === 'up' && lib.i >= 5) lib.i -= 5;
+    else if (k === 'down' && lib.i + 5 < n) lib.i += 5;
+    else if (k === 'down' && Math.floor(lib.i / 5) < Math.floor((n - 1) / 5)) lib.i = n - 1;
+    else if (k === 'ok') { launch(lib.apps[lib.i].id); return; }
+    else if (k === 'menu') { var id = lib.apps[lib.i].id; if (pins.indexOf(id) >= 0) unpin(id); else pin(id); }
+    renderLib();
+  }
+  function extractTheme(id) {
+    var i = info[id];
+    if (!i || !i.img || i.theme || i.extracting) return;
+    i.extracting = true;
+    vibrant(i.img, function (t) { if (t) { i.theme = t; accentKey = ''; if (lib) renderLib(); else { infoKey = ''; render(); } } });
+  }
+
+  // ==================================================================
+  // Input
+  // ==================================================================
+  function wake() {
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(function () { if (!lib && !sheet) { ambient = true; stage.classList.add('ambient'); } }, IDLE_MS);
+    if (ambient) { ambient = false; stage.classList.remove('ambient'); return true; }
+    return false;
+  }
+  window.nav = function (k) {
+    if (wake()) return;
+    if (sheet) { sheetKey(k); return; }
+    if (lib) { libKey(k); return; }
+    var key = String(row), max = (row === 0 ? pins.length : row === 1 ? PILLS.length : CTL.length) - 1;
+    if (k === 'left') { if (col[key] > 0) { col[key]--; render(); } }
+    else if (k === 'right') { if (col[key] < max) { col[key]++; render(); } }
+    else if (k === 'down') { if (row < 1) { row++; render(); } }
+    else if (k === 'up') { if (row === 1 || (row === 0 && npVisible())) { row--; render(); } }
+    else if (k === 'back') { if (row !== 0) { row = 0; render(); } }
+    else if (k === 'ok') activate();
+    else if (k === 'menu') menu();
+  };
+  var KEYS = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down', Enter: 'ok', ' ': 'ok',
+               Escape: 'back', Backspace: 'back', m: 'menu', M: 'menu', ContextMenu: 'menu' };
+  document.addEventListener('keydown', function (e) {
+    if (TV) return;
+    var k = KEYS[e.key]; if (!k) return;
+    e.preventDefault(); window.nav(k);
+  });
+
+  // ==================================================================
+  // Boot
+  // ==================================================================
+  function loadApps() {
+    if (!TV) return;
+    try {
+      JSON.parse(TV.resolve(JSON.stringify(pins.concat(['cast'])))).forEach(function (x) { var old = info[x.id] || {}; x.theme = old.theme; info[x.id] = x; });
+      buildTiles(); pins.forEach(extractTheme);
+    } catch (e) {}
+  }
+  var lastData = 0;
+  window.onResume = function () {
+    loadApps();
+    if (Date.now() - lastData > 15 * 60 * 1000) { lastData = Date.now(); loadWeather(); loadMatch(); }
+    wake(); infoKey = ''; render();
+  };
+
+  if (!TV) {
+    stage.classList.add('preview');
+    if (!CONFIG.spotifyClientId) CONFIG.spotifyClientId = 'preview';
+    sp = { linked: true, at: Date.now(), item: { title: 'Neon Tides', artist: 'The Night Swim', art: null, device: 'Krish’s iPhone', isPlaying: true, progress: 72000, duration: 214000 } };
+  }
+  buildTiles(); buildPills(); renderMusic();
+  loadApps(); render(); wake(); showArt();
+  lastData = Date.now(); loadWeather(); loadMatch();
+  setInterval(function () { loadWeather(); loadMatch(); lastData = Date.now(); }, 30 * 60 * 1000);
+})();
+</script>
+</body>
+</html>

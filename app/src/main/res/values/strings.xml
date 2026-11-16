@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Smart TV</string>
+    <string name="service_name">Smart TV Home button</string>
+    <string name="service_desc">Makes the remote\'s Home button open Smart TV instead of Amazon\'s home screen. It only looks at which app is on screen; it does not read any content.</string>
+</resources>
