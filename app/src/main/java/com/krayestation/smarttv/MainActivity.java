@@ -95,16 +95,37 @@ public class MainActivity extends Activity {
         s.setDomStorageEnabled(true);
         s.setAllowFileAccess(true);
         s.setMediaPlaybackRequiresUserGesture(false);
+        s.setTextZoom(100);                 // ignore system font-size settings, the layout is fixed
+        s.setUseWideViewPort(false);
+        s.setLoadWithOverviewMode(false);
+        s.setSupportZoom(false);
+        web.setInitialScale(0);
+        web.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         web.addJavascriptInterface(new Bridge(), "TV");
         web.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
                 pageReady = true;
+                pushSize();
+            }
+        });
+        // Tell the page the real screen size whenever it changes, so it can scale itself to fit
+        web.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
+            @Override
+            public void onLayoutChange(View v, int l, int t, int r, int bt, int ol, int ot, int or, int ob) {
+                pushSize();
             }
         });
         setContentView(web);
         hideSystemUi();
         web.loadUrl("file:///android_asset/index.html");
+    }
+
+    void pushSize() {
+        int w = web.getWidth(), h = web.getHeight();
+        if (w <= 0 || h <= 0) return;
+        float d = getResources().getDisplayMetrics().density;
+        js("window.__vw=" + (w / d) + ";window.__vh=" + (h / d) + ";window.refit&&window.refit()");
     }
 
     void hideSystemUi() {
@@ -118,7 +139,7 @@ public class MainActivity extends Activity {
         HomeService.bypass = false; // back on our screen: Home returns here again
         visible = true;
         hideSystemUi();
-        if (pageReady) js("window.onResume&&window.onResume()");
+        if (pageReady) { pushSize(); js("window.onResume&&window.onResume()"); }
         startSpotifyPoller();
     }
 
@@ -588,7 +609,7 @@ public class MainActivity extends Activity {
                         o.put("label", labelFor(pkg));
                         if (!"cast".equals(id)) {
                             boolean[] banner = new boolean[1];
-                            String img = artFor(pkg, 640, banner);
+                            String img = artFor(pkg, 320, banner);
                             if (img != null) {
                                 o.put("img", img);
                                 o.put("kind", banner[0] ? "banner" : "icon");
@@ -601,8 +622,30 @@ public class MainActivity extends Activity {
             return out.toString();
         }
 
+        /** Same as resolve(), but off the UI path: answers via window.onApps(json). */
+        @JavascriptInterface
+        public void resolveAsync(final String idsJson) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    js("window.onApps&&window.onApps(" + JSONObject.quote(resolve(idsJson)) + ")");
+                }
+            }).start();
+        }
+
         @JavascriptInterface
         public String allApps() { return MainActivity.this.allApps(); }
+
+        /** Answers via window.onAllApps(json). */
+        @JavascriptInterface
+        public void allAppsAsync() {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    js("window.onAllApps&&window.onAllApps(" + JSONObject.quote(MainActivity.this.allApps()) + ")");
+                }
+            }).start();
+        }
 
         @JavascriptInterface
         public String launch(String id) { return doLaunch(id); }

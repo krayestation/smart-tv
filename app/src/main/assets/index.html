@@ -2,22 +2,20 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
 <title>Smart TV Home</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..800;1,9..144,300..800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="fonts/fonts.css">
 <style>
   :root {
     --ease: cubic-bezier(.2,.8,.2,1);
     --serif: "Fraunces", "Iowan Old Style", "Palatino Linotype", Georgia, "Noto Serif", serif;
-    --sans: "Inter", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, sans-serif;
+    --sans: Roboto, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
   }
   html, body { margin: 0; height: 100%; background: #000; overflow: hidden; color: #fff; cursor: none;
     font-family: var(--sans); -webkit-font-smoothing: antialiased; }
   #stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; transform-origin: 0 0;
     background: radial-gradient(70% 80% at 75% 20%, #2c4a3a 0%, rgba(44,74,58,0) 70%), radial-gradient(60% 70% at 10% 90%, #4a2c3c 0%, rgba(74,44,60,0) 70%), #0d0f14;
-    --accent: hsl(0,80%,55%); --accent2: hsl(30,80%,45%); --glass: rgba(18,18,26,.42); }
+    --accent: hsl(0,80%,55%); --accent2: hsl(30,80%,45%); --glass: rgba(18,18,26,.62); }
 
   /* ---------- artwork background ---------- */
   .bg { position: absolute; left: -3%; top: -3%; width: 106%; height: 106%; background-size: cover; background-position: center;
@@ -41,7 +39,7 @@
     font-variant-numeric: lining-nums tabular-nums; font-variation-settings: "opsz" 144; }
   .chips { margin-top: 18px; white-space: nowrap; }
   .chip { display: inline-block; vertical-align: middle; height: 50px; line-height: 50px; padding: 0 22px 0 14px; margin-left: 12px; border-radius: 25px;
-    font-size: 21px; font-weight: 600; background: var(--glass); -webkit-backdrop-filter: blur(26px) saturate(1.5); backdrop-filter: blur(26px) saturate(1.5);
+    font-size: 21px; font-weight: 600; background: var(--glass); 
     box-shadow: inset 0 0 0 1px rgba(255,255,255,.16); text-align: left; }
   .chip svg { width: 30px; height: 30px; vertical-align: -9px; margin-right: 8px; }
   .chip .muted { opacity: .75; font-weight: 500; }
@@ -114,7 +112,7 @@
   /* ---------- pills ---------- */
   .pills { position: absolute; left: 96px; bottom: 100px; white-space: nowrap; transition: opacity 400ms var(--ease); }
   .pill { display: inline-block; height: 60px; line-height: 60px; padding: 0 30px 0 24px; margin-right: 16px; border-radius: 30px; font-size: 23px; font-weight: 600;
-    background: var(--glass); -webkit-backdrop-filter: blur(26px) saturate(1.5); backdrop-filter: blur(26px) saturate(1.5); box-shadow: inset 0 0 0 1px rgba(255,255,255,.16);
+    background: var(--glass);  box-shadow: inset 0 0 0 1px rgba(255,255,255,.16);
     transition: transform 240ms var(--ease), background 400ms var(--ease), box-shadow 240ms var(--ease); }
   .pill svg { width: 26px; height: 26px; vertical-align: -6px; margin-right: 12px; }
   .pill.focus { background: linear-gradient(135deg, var(--accent), var(--accent2)); transform: scale(1.1);
@@ -148,7 +146,7 @@
   .sheet { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: rgba(0,0,0,.45); display: none; }
   .sheet.on { display: block; }
   .card { position: absolute; left: 50%; top: 50%; width: 820px; margin-left: -410px; transform: translateY(-50%); padding: 46px 54px 40px; border-radius: 34px;
-    background: rgba(24,24,30,.78); -webkit-backdrop-filter: blur(40px) saturate(1.4); backdrop-filter: blur(40px) saturate(1.4);
+    background: rgba(24,24,30,.94); 
     box-shadow: inset 0 0 0 1px rgba(255,255,255,.12), 0 40px 100px rgba(0,0,0,.6); }
   .card h2 { margin: 0 0 8px; font-family: var(--serif); font-size: 46px; font-weight: 600; letter-spacing: -.01em; }
   .card .meta { font-size: 22px; opacity: .75; margin-bottom: 18px; }
@@ -160,7 +158,7 @@
   .opt.focus { background: linear-gradient(135deg, var(--accent), var(--accent2)); transform: scale(1.03); box-shadow: 0 0 0 3px #fff; }
 
   .toast { position: absolute; left: 50%; top: 70px; transform: translate(-50%, -20px); padding: 16px 30px; border-radius: 22px; font-size: 24px; font-weight: 600;
-    background: rgba(24,24,30,.85); -webkit-backdrop-filter: blur(30px); backdrop-filter: blur(30px); opacity: 0; white-space: nowrap;
+    background: rgba(24,24,30,.94);  opacity: 0; white-space: nowrap;
     transition: opacity 300ms var(--ease), transform 300ms var(--ease); }
   .toast.on { opacity: 1; transform: translate(-50%, 0); }
 
@@ -329,11 +327,20 @@
   }
   function savePins() { try { localStorage.setItem('pins', JSON.stringify(pins)); } catch (e) {} }
 
+  // Scale the 1920x1080 design to whatever screen this is (720p, 1080p, 4K, a laptop window)
   function fit() {
-    var s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
-    stage.style.transform = 'translate(' + (window.innerWidth - 1920 * s) / 2 + 'px,' + (window.innerHeight - 1080 * s) / 2 + 'px) scale(' + s + ')';
+    // On the TV the app tells us the exact screen size (window.__vw/__vh), which avoids WebView quirks
+    var w = window.__vw || window.innerWidth || document.documentElement.clientWidth;
+    var h = window.__vh || window.innerHeight || document.documentElement.clientHeight;
+    if (!w) return;
+    if (!h) h = w * 9 / 16;
+    var s = Math.min(w / 1920, h / 1080);
+    stage.style.transform = 'translate(' + Math.max(0, (w - 1920 * s) / 2) + 'px,' + Math.max(0, (h - 1080 * s) / 2) + 'px) scale(' + s + ')';
   }
-  window.addEventListener('resize', fit); fit();
+  window.addEventListener('resize', fit);
+  window.addEventListener('load', fit);
+  window.refit = fit;
+  fit(); setTimeout(fit, 60); setTimeout(fit, 500);
 
   // ==================================================================
   // Accent colours (from each app's icon on the TV)
@@ -390,7 +397,7 @@
     accentKey = key;
     stage.style.setProperty('--accent', hsl(h, s, .52));
     stage.style.setProperty('--accent2', hsl(h + 35, s, .42));
-    stage.style.setProperty('--glass', hsl(h, s * .45, .14, .46));
+    stage.style.setProperty('--glass', hsl(h, s * .45, .12, .66));
   }
 
   // ==================================================================
@@ -760,16 +767,26 @@
                      'Channel 4', 'Plex', 'VLC', 'Twitch', 'AirScreen', 'Downloader', 'DAZN', 'Sky Go', 'TNT Sports', 'Silk Browser'];
   function libId(a) { for (var k in info) if (info[k] && info[k].pkg === a.pkg && BUILTIN[k]) return k; return 'pkg:' + a.pkg; }
   function openLibrary() {
-    var apps;
-    if (TV) { try { apps = JSON.parse(TV.allApps()); } catch (e) { apps = []; } }
-    else apps = SAMPLE_APPS.map(function (n) { return { pkg: 'sample.' + n.toLowerCase().replace(/\W/g, ''), label: n }; });
+    var apps = [];
+    if (TV) {
+      try { apps = JSON.parse(cacheGet('allapps') || '[]'); } catch (e) {}
+      if (TV.allAppsAsync) TV.allAppsAsync();          // refresh in the background
+    } else apps = SAMPLE_APPS.map(function (n) { return { pkg: 'sample.' + n.toLowerCase().replace(/\W/g, ''), label: n }; });
+    showLibrary(apps, 0);
+  }
+  window.onAllApps = function (s) {
+    cacheSet('allapps', s);
+    if (!lib) return;
+    try { var list = JSON.parse(s); showLibrary(list, Math.min(lib.i, Math.max(0, list.length - 1))); } catch (e) {}
+  };
+  function showLibrary(apps, start) {
     apps.forEach(function (a) {
       var id = libId(a);
       if (!info[id]) info[id] = { installed: true, label: a.label, img: a.img, kind: a.kind, pkg: a.pkg };
       a.id = id;
     });
-    lib = { apps: apps, i: 0 };
-    $('libSub').textContent = apps.length + ' apps on this Fire TV';
+    lib = { apps: apps, i: start || 0 };
+    $('libSub').textContent = apps.length ? apps.length + ' apps on this Fire TV' : 'Loading your apps…';
     $('grid').innerHTML = apps.map(function (a) {
       return '<div class="lapp"><div class="inner">' + artHtml(a.id) + '<div class="gloss"></div></div><div class="pin">' + SVG.check + '</div><div class="name">' + esc(a.label) + '</div></div>';
     }).join('');
@@ -837,13 +854,18 @@
   // ==================================================================
   // Boot
   // ==================================================================
-  function loadApps() {
-    if (!TV) return;
-    try {
-      JSON.parse(TV.resolve(JSON.stringify(pins.concat(['cast'])))).forEach(function (x) { var old = info[x.id] || {}; x.theme = old.theme; info[x.id] = x; });
-      buildTiles(); pins.forEach(extractTheme);
-    } catch (e) {}
+  // App icons: shown instantly from the last visit, then refreshed in the background
+  function applyApps(list) {
+    list.forEach(function (x) { var old = info[x.id] || {}; x.theme = old.theme; info[x.id] = x; });
+    buildTiles(); infoKey = ''; render();
+    pins.forEach(extractTheme);
   }
+  function loadApps() {
+    if (TV && TV.resolveAsync) TV.resolveAsync(JSON.stringify(pins.concat(['cast'])));
+  }
+  window.onApps = function (s) {
+    try { applyApps(JSON.parse(s)); cacheSet('appinfo', s); } catch (e) {}
+  };
   var lastData = 0;
   window.onResume = function () {
     loadApps();
@@ -856,8 +878,11 @@
     if (!CONFIG.spotifyClientId) CONFIG.spotifyClientId = 'preview';
     sp = { linked: true, at: Date.now(), item: { title: 'Neon Tides', artist: 'The Night Swim', art: null, device: 'Krish’s iPhone', isPlaying: true, progress: 72000, duration: 214000 } };
   }
+  // Paint first (from cache), then do everything slow in the background
+  if (TV) { try { var cachedApps = cacheGet('appinfo'); if (cachedApps) JSON.parse(cachedApps).forEach(function (x) { info[x.id] = x; }); } catch (e) {} }
   buildTiles(); buildPills(); renderMusic();
-  loadApps(); render(); wake(); showArt();
+  render(); wake(); showArt();
+  setTimeout(loadApps, 0);
   lastData = Date.now(); loadWeather(); loadMatch();
   setInterval(function () { loadWeather(); loadMatch(); lastData = Date.now(); }, 30 * 60 * 1000);
 })();
